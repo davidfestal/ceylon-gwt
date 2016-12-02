@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="source"/>
+	<classpathentry exported="true" kind="con" path="com.redhat.ceylon.eclipse.ui.cpcontainer.RUNTIME_CONTAINER/default"/>
+	<classpathentry exported="true" kind="con" path="com.redhat.ceylon.eclipse.ui.cpcontainer.CEYLON_CONTAINER/default"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ceylon.interop.gwt.annotations"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ceylon.interop.gwt.processor"/>
+	<classpathentry kind="output" path="emulation-java-project/bin"/>
+</classpath>

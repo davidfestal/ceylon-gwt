@@ -1,0 +1,42 @@
+body {
+	font-family: arial, sans-serif;
+    background-color: #d9e9e4;
+    vertical-align: middle;
+}
+
+.gwt-Label-title {
+	color: #d9e9e4;
+	background-color: #183939;
+	font-size: 2em;
+	text-align: center;
+	padding: 1em;
+}
+
+.labelAndField {
+    background-color: #183939;
+	padding: 3px;
+	text-align: center;
+	font-size: 1.5em;
+    vertical-align: middle;
+}
+
+.gwt-Label {
+	color: #d9e9e4;
+	display: inline;
+}
+
+.gwt-TextBox {
+	background-color: #d9e9e4;
+	color: #183939;
+	border: inset;
+}
+
+#html {
+    font-size: 2em;
+    font-weight: bold;
+    background-color: #d9e9e4;
+    color: #183939;
+    text-align: center;
+    padding-top: 4em;
+}
+

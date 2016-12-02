@@ -1,0 +1,7 @@
+/bin/
+/modules/
+/.exploded/
+/classes/
+/.settings/
+/.ceylon/config~
+

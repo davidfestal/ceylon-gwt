@@ -1,0 +1,10 @@
+
+[compiler]
+source=source
+resource=resource
+
+[compiler.jvm]
+target=7
+
+[defaults]
+encoding=UTF-8

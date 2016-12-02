@@ -1,0 +1,12 @@
+
+[compiler]
+source=source
+resource=resource
+
+[compiler.jvm]
+target=7
+apt=ceylon.interop.gwt.processor/1.0.0
+javac=-Aceylon.interop.gwt.generated_folder_name=classes
+
+[defaults]
+encoding=UTF-8

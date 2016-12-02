@@ -1,0 +1,13 @@
+/bin/
+/modules/
+/.exploded/
+/classes/
+/.settings/
+/.ceylon/config~
+/gwt-unitCache/
+/war/gwt_ceylon_project_sample.GwtCeylonProject/
+/war/deploy/
+/war/WEB-INF/classes/
+/war/WEB-INF/lib/
+
+
