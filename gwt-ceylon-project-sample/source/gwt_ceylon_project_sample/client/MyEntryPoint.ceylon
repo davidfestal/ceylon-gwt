@@ -20,15 +20,36 @@ import com.google.gwt.user.client.ui {
 import com.google.gwt.dom.client {
     Style
 }
+import com.google.gwt.event.dom.client {
+	KeyUpEvent,
+	KeyUpHandler
+}
 
 /*
-shared native String inJavascript(String myString) => delegate(`inJavascript`)(myString);
+
+shared native String inJavascript(String myString);
+
+shared native("jvm") String inJavascript(String myString) => delegate(`inJavascript`)(myString);
 
 shared native("js") String inJavascript(String myString) => CeylonDiv { 
 	CeylonH1 { "Hi, it's Ceylon printing '`` myString ``' inside GWT code" }
 }.string;
-*/
 
+
+shared native class JavascriptClass(String myString) {
+    shared native Integer method();
+}
+
+shared native("js") class JavascriptClass(String myString) {
+    shared native("js") Integer method() => 1;
+}
+
+shared native("jvm") class JavascriptClass(String myString) {
+    shared native("jvm") Integer method() => delegate(`method`)();
+}
+
+*/
+ 
 native("jvm") String inJavascript(String myString) => 
 		"<div id='html'>
 		 	Hi `` myString `` !<br/><br/>Here is some Ceylon code running in GWT !
