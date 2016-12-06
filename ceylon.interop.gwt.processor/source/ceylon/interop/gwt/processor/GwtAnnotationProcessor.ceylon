@@ -136,8 +136,9 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 			is LanguageCompiler languageCompiler = LanguageCompiler.instance(context),
 			exists ceylonContext = context.get(LanguageCompiler.ceylonContextKey));
 		
-
 		value gwtModel = HashMap<String, GwtModule>();
+		
+		// TODO: For each module, search for a module descriptor file and build the gwtModel from the found descriptors.
 		
 		for (element in roundEnv.getElementsAnnotatedWith(moduleAnnotationClass)) {
 			if (is PackageElement pkgElem = element.enclosingElement) {
@@ -149,7 +150,7 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 				}
 				
 				value moduleAnnotation = element.getAnnotation(moduleAnnotationClass);
-				gwtModel.put(moduleName, GwtModule(m, moduleAnnotation));
+				gwtModel.put(moduleName, GwtModule.fromModel(m, moduleAnnotation));
 			}
 		}
 
@@ -168,7 +169,7 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 				}
 
 				value sourceAnnotation = element.getAnnotation(sourceAnnotationClass);
-				parentModule.addSource(GwtSource(p, sourceAnnotation));
+				parentModule.addSource(GwtSource.fromModel(p, sourceAnnotation));
 			}
 		}
 
@@ -186,7 +187,7 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 					return true;
 				}
 				
-				parentModule.addSuperSource(GwtSuperSource(p));
+				parentModule.addSuperSource(GwtSuperSource.fromModel(p));
 			}
 		}
 		
@@ -203,7 +204,7 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 					reportError("The GWT public package '`` pkgName ``' is in a non-GWT module", trees.getPath(element)?.compilationUnit, trees.getPath(element)?.leaf);
 					return true;
 				}
-				parentModule.addPublic(GwtPublic(p));
+				parentModule.addPublic(GwtPublic.fromModel(p));
 			}
 		}
 		
