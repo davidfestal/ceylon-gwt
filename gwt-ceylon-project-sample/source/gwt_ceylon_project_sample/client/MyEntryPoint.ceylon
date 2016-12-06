@@ -1,11 +1,3 @@
-import ceylon.html {
-	CeylonDiv=Div,
-	CeylonH1=H1
-}
-import ceylon.interop.gwt.annotations {
-	delegate
-}
-
 import com.google.gwt.core.client {
 	EntryPoint
 }
@@ -20,13 +12,18 @@ import com.google.gwt.user.client.ui {
 import com.google.gwt.dom.client {
     Style
 }
-import com.google.gwt.event.dom.client {
-	KeyUpEvent,
-	KeyUpHandler
-}
 
 /*
 
+import ceylon.html {
+    CeylonDiv=Div,
+    CeylonH1=H1
+}
+
+import ceylon.interop.gwt.annotations {
+    delegate
+}
+ 
 shared native String inJavascript(String myString);
 
 shared native("jvm") String inJavascript(String myString) => delegate(`inJavascript`)(myString);
