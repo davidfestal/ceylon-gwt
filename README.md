@@ -71,3 +71,9 @@ So to test you should:
 ```
 - The GWT DevMode window should open with the URL to test the sample project compiled to JS.
 
+## Warning
+
+There is currently a bug in the incremental build. To have it working without any error, you should always *clean build* the sample project.
+
+
+
