@@ -88,7 +88,8 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 	late Trees trees;
 	late Filer filer;
 	late variable CeyloncFileManager fileManager;
-	
+	late File generatedGwtResourcesFolder;
+		
 	void reportError(String message, CompilationUnitTree? cu = null, Tree? node = null, AnnotationMirror? annotationMirror = null) {
 		if (exists node,
 			exists path = trees.getPath(cu, node),
@@ -123,13 +124,21 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 		
 		value generatedFilesFolder = File(classOutput.parentFile,
 			processingEnv.options.get(javaString(generatedFolderNameOption))?.string else "generated");
-		value generatedGwtResourcesFolder = File(generatedFilesFolder, "gwt-resources");
+		
+		generatedGwtResourcesFolder = File(generatedFilesFolder, "gwt-resources");
 		generatedGwtResourcesFolder.mkdirs();
 		fileManager.setLocation(CeylonLocation.resourcePath, JavaIterable { generatedGwtResourcesFolder, *fileManager.getLocation(CeylonLocation.resourcePath) });
 	}
 	
 	
 	shared actual Boolean process(Set<out TypeElement> annotations, RoundEnvironment roundEnv) {
+		if (annotations.empty) {
+			return false;
+		}
+		
+		if (roundEnv.rootElements.empty) {
+			return false;
+		}
 
 		assert(is JavacProcessingEnvironment jpe = this.processingEnv,
 			exists context = jpe.context,
@@ -137,8 +146,32 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 			exists ceylonContext = context.get(LanguageCompiler.ceylonContextKey));
 		
 		value gwtModel = HashMap<String, GwtModule>();
-		
-		// TODO: For each module, search for a module descriptor file and build the gwtModel from the found descriptors.
+
+        assert(exists phasedUnits = LanguageCompiler.getPhasedUnitsInstance(context));
+		for (m in phasedUnits.moduleSourceMapper.compiledModules) {
+			variable File moduleFolder = generatedGwtResourcesFolder;
+			value packageQualifiedName = m.nameAsString;
+			packageQualifiedName.split('.'.equals).each((part) =>
+			    moduleFolder = File(moduleFolder, part));
+			if (! moduleFolder.\iexists()) {
+				continue;
+			}
+			value descriptors = moduleFolder.listFiles((file) => 
+				file.name.endsWith(".gwt.xml"));
+			if (descriptors.size > 1) {
+				reportError("Module '`` packageQualifiedName ``' contains 2 possible descriptors. You should run a clean build.");
+				return true;
+			}
+			
+			if (exists descriptor = descriptors.array.get(0),
+				exists gwtModule=parseGwtModule(packageQualifiedName, descriptor)) {
+				if (! descriptor.delete()) {
+					reportError("GWT Module descriptor '`` descriptor.absolutePath ``' could not be deleted.");
+					return true;
+				}
+				gwtModel.put(packageQualifiedName, gwtModule);
+			}
+		}
 		
 		for (element in roundEnv.getElementsAnnotatedWith(moduleAnnotationClass)) {
 			if (is PackageElement pkgElem = element.enclosingElement) {

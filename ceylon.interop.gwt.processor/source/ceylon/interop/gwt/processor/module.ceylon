@@ -56,4 +56,5 @@ module ceylon.interop.gwt.processor "1.0.0" {
 	shared import com.redhat.ceylon.compiler.java "1.3.2-SNAPSHOT";
 	import ceylon.interop.java "1.3.2-SNAPSHOT";
 	import ceylon.interop.gwt.annotations "1.0.0";
+	import javax.xml "7";
 }
