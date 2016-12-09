@@ -1,3 +1,6 @@
+import com.redhat.ceylon.langtools.source.tree {
+	Tree
+}
 import com.redhat.ceylon.langtools.tools.javac.tree {
 	TreeInfo,
 	Pretty,
@@ -53,11 +56,69 @@ class GwtJavaRenderer(
     }
 
     shared actual void visitLetExpr(LetExpr letExpr) {
-        value type = letExpr.expr?.type?.string else "java.lang.Object";
+        String | JCTree type ;
+        switch(returnedExpr = letExpr.expr)
+        case(is JCIdent) {
+            value returnedVariableName = returnedExpr.name.string;
+            for(s in letExpr.stats) {
+                if (is JCVariableDecl s,
+	                exists theName = s.name?.string,
+            		theName == returnedVariableName) {
+                    type = s.type;
+                    break;
+                }
+            } else {
+                type = "java.lang.Object";
+            }
+        }
+        case(is JCLiteral) {
+            switch (kindLitteral = returnedExpr.typetag.kindLiteral)
+            case(Tree.Kind.intLiteral) {
+                type="int";
+            }
+            case(Tree.Kind.longLiteral) {
+                type="long";
+            }
+            case(Tree.Kind.doubleLiteral) {
+                type="double";
+            }
+            case(Tree.Kind.booleanLiteral) {
+                type="boolean";
+            }
+            case(Tree.Kind.charLiteral) {
+                type="char";
+            }
+            case(Tree.Kind.stringLiteral) {
+                type="java.lang.String";
+            }
+            case(Tree.Kind.nullLiteral) {
+                type="java.lang.Object";
+            }
+            else {
+                type="java.lang.Object";
+            }
+        } else {
+            type = "java.lang.Object";
+        }
+        
         print("
-               new ceylon.interop.gwt.emulation.LetExpressionContainer<`` type ``>() {
+               new ceylon.interop.gwt.emulation.LetExpressionContainer<");
+        switch(type)
+        case(is String) {
+            print(type);
+        } else {
+            printExpr(type);
+        }
+        print(">() {
                    @Override
-                   public `` type `` call() {
+                   public ");
+        switch(type)
+        case(is String) {
+            print(type);
+        } else {
+            printExpr(type);
+        }
+        print(" call() {
                ");
         if (exists stats = letExpr.stats) {
             printStats(stats);

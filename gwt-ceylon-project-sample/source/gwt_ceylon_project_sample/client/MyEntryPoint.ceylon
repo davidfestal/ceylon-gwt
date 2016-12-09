@@ -65,9 +65,15 @@ native("jvm") class MyEntryPoint() satisfies EntryPoint {
         field.visibleLength=30;
         field.maxLength=60;
 
-        value label = Label("Please enter your very nice name : ");
+        value label = Label("Please enter your name : ");
 
-        value html = HTML(inJavascript(field.\ivalue));
+        String? htmlContents = inJavascript(field.\ivalue);
+		
+        value html = HTML(
+            if (exists htmlContents)
+            then htmlContents.string
+            else "unknown..."
+        );
 
         value flow = FlowPanel();
         flow.stylePrimaryName = "labelAndField";
