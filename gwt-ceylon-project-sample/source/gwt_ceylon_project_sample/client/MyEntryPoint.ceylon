@@ -12,6 +12,9 @@ import com.google.gwt.user.client.ui {
 import com.google.gwt.dom.client {
     Style
 }
+import com.google.gwt.event.dom.client {
+	KeyUpEvent
+}
 
 /*
 
@@ -62,7 +65,7 @@ native("jvm") class MyEntryPoint() satisfies EntryPoint {
         field.visibleLength=30;
         field.maxLength=60;
 
-        value label = Label("Please enter your name : ");
+        value label = Label("Please enter your very nice name : ");
 
         value html = HTML(inJavascript(field.\ivalue));
 
@@ -83,12 +86,14 @@ native("jvm") class MyEntryPoint() satisfies EntryPoint {
         mainPanel.setWidgetTopHeight(html, (place += flowHeightEm), Style.Unit.em, 100.0, Style.Unit.pct);
 		root().add(mainPanel);
 
-		field.addKeyUpHandler((evt) {
+		void setHtml() {
 			html.html = inJavascript(field.\ivalue);
-		});
+		}
 
-		field.addChangeHandler((evt) {
-			html.html = inJavascript(field.\ivalue);
-		});
+		void f(KeyUpEvent evt) => setHtml();
+		
+		field.addKeyUpHandler(f);
+
+		field.addChangeHandler((evt) => setHtml());
 	}
 }
