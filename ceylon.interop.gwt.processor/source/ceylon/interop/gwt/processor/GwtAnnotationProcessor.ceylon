@@ -1,73 +1,79 @@
 import ceylon.collection {
-    HashMap
+	HashMap
 }
 import ceylon.interop.gwt.annotations {
-    GwtModuleAnnotation,
-    GwtSourceAnnotation,
-    GwtPublicAnnotation,
-    GwtSuperSourceAnnotation
+	GwtModuleAnnotation,
+	GwtSourceAnnotation,
+	GwtPublicAnnotation,
+	GwtSuperSourceAnnotation
 }
 import ceylon.interop.java {
-    javaString,
-    javaAnnotationClass,
-    JavaSet,
-    JavaIterable
+	javaString,
+	javaAnnotationClass,
+	JavaSet,
+	JavaIterable
 }
 
 import com.redhat.ceylon.compiler.java.tools {
-    CeylonLocation,
-    CeyloncFileManager,
-    LanguageCompiler
+	CeylonLocation,
+	CeyloncFileManager,
+	LanguageCompiler
 }
 import com.redhat.ceylon.javax.annotation.processing {
-    supportedSourceVersion,
-    AbstractProcessor,
-    ProcessingEnvironment,
-    RoundEnvironment,
-    Filer
+	supportedSourceVersion,
+	AbstractProcessor,
+	ProcessingEnvironment,
+	RoundEnvironment,
+	Filer
 }
 import com.redhat.ceylon.javax.lang.model {
-    SourceVersion
+	SourceVersion
 }
 import com.redhat.ceylon.javax.lang.model.element {
-    TypeElement,
-    Modifier,
-    AnnotationMirror,
-    PackageElement
+	TypeElement,
+	Modifier,
+	AnnotationMirror,
+	PackageElement
 }
 import com.redhat.ceylon.javax.tools {
-    Diagnostic,
-    StandardLocation,
-    JavaFileManager
+	Diagnostic,
+	StandardLocation,
+	JavaFileManager,
+	JavaFileObject
 }
 import com.redhat.ceylon.langtools.source.tree {
-    CompilationUnitTree,
-    Tree
+	CompilationUnitTree,
+	Tree
 }
 import com.redhat.ceylon.langtools.source.util {
-    Trees
+	Trees
 }
 import com.redhat.ceylon.langtools.tools.javac.code {
-    Symbol
+	Symbol
 }
 import com.redhat.ceylon.langtools.tools.javac.file {
-    RegularFileObject
+	RegularFileObject
 }
 import com.redhat.ceylon.langtools.tools.javac.processing {
-    JavacProcessingEnvironment
+	JavacProcessingEnvironment,
+	JavacMessager
 }
 import com.redhat.ceylon.langtools.tools.javac.tree {
-    JCTree
+	JCTree
+}
+import com.redhat.ceylon.langtools.tools.javac.util {
+	Log,
+	Context
 }
 
 import java.io {
-    File
+	File
 }
 import java.lang {
-    JavaClass=Class
+	JavaClass=Class
 }
 import java.util {
-    Set
+	Set
 }
 
 supportedSourceVersion { \ivalue = SourceVersion.release7; }
@@ -88,29 +94,57 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 	late Trees trees;
 	late Filer filer;
 	late variable CeyloncFileManager fileManager;
+	late variable Context context;
 	late File generatedGwtResourcesFolder;
 		
-	void reportError(String message, CompilationUnitTree? cu = null, Tree? node = null, AnnotationMirror? annotationMirror = null) {
-		if (exists node,
-			exists path = trees.getPath(cu, node),
-			exists element = trees.getElement(path)) {
-			processingEnv.messager.printMessage(Diagnostic.Kind.error, message, element, annotationMirror);
-		} else if (is JCTree.JCCompilationUnit jcu = cu,
-			jcu.defs.nonEmpty(),
-			exists path = trees.getPath(cu, jcu.defs.get(0)),
-			exists element = trees.getElement(path)) {
-			processingEnv.messager.printMessage(Diagnostic.Kind.error, message, element, annotationMirror);
-		} else {
-			processingEnv.messager.printMessage(Diagnostic.Kind.error, message);
-		}
-	}
-	
 	supportedOptions => JavaSet(set{ javaString(generatedFolderNameOption) });
 	
 	supportedAnnotationTypes => JavaSet(set{
 		javaString("``moduleAnnotationClass.\ipackage.name``.*"),
 		javaString(nativeAnnotationClass.name.replace("$annotation$", ".*"))
 	});
+	
+	void reportError(String message, CompilationUnitTree? cu = null, Tree? node = null, AnnotationMirror? annotationMirror = null) {
+		assert(is JavacMessager messager = processingEnv.messager);
+		
+		if (messager.errorCount() == 0) {
+			messager.printMessage(Diagnostic.Kind.error, "Ceylon-GWT source code generation failed");
+		}
+		
+		if (is JCTree node,
+			is JCTree.JCCompilationUnit cu) {
+			value log = Log.instance(context);
+			
+			variable JavaFileObject? oldSource = null;
+			variable JavaFileObject? newSource = null;
+			newSource = cu.sourceFile;
+			if (newSource exists) {
+				// save the old version and reinstate it later
+				oldSource = log.useSource(newSource);
+			}
+			try {
+				value prev = log.multipleErrors;
+				log.multipleErrors = true;
+				try {
+					log.error(node.pos(), "proc.messager", message);
+				} finally {
+					log.multipleErrors = prev;
+				}
+			} finally {
+				// reinstate the saved version, only if it was saved earlier
+				if (newSource exists) {
+					log.useSource(oldSource);
+				}
+			}
+		} else if (is JCTree.JCCompilationUnit jcu = cu,
+			jcu.defs.nonEmpty(),
+			exists path = trees.getPath(cu, jcu.defs.get(0)),
+			exists element = trees.getElement(path)) {
+			messager.printMessage(Diagnostic.Kind.error, message, element, annotationMirror);
+		} else {
+			messager.printMessage(Diagnostic.Kind.error, message);
+		}
+	}
 	
 	shared actual void init(ProcessingEnvironment processingEnv) {
 		super.init(processingEnv);
@@ -145,6 +179,8 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 			is LanguageCompiler languageCompiler = LanguageCompiler.instance(context),
 			exists ceylonContext = context.get(LanguageCompiler.ceylonContextKey));
 		
+		this.context = context;
+
 		value gwtModel = HashMap<String, GwtModule>();
 
         assert(exists phasedUnits = LanguageCompiler.getPhasedUnitsInstance(context));
@@ -363,7 +399,7 @@ shared class GwtAnnotationProcessor extends AbstractProcessor {
 			value relativeName = "``mainClass.name``.java";
 			value source = filer.createResource(CeylonLocation.resourcePath, javaString(pkgName), javaString(relativeName) , null);
 			try (writer = source.openWriter()) {
-				GwtJavaRenderer(writer, classesToWrite, gwtSuperSourcePackages).renderAsJavaSource(cu);
+				GwtJavaRenderer(writer, cu, classesToWrite, reportError).renderAsJavaSource();
 			}
 
 			languageCompiler.addResourceFileObject(RegularFileObject(fileManager, File(source.toUri())));

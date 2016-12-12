@@ -1,5 +1,10 @@
+import ceylon.interop.java {
+	CeylonIterable
+}
+
 import com.redhat.ceylon.langtools.source.tree {
-	Tree
+	Tree,
+	CompilationUnitTree
 }
 import com.redhat.ceylon.langtools.tools.javac.tree {
 	TreeInfo,
@@ -15,9 +20,10 @@ import java.io {
 
 class GwtJavaRenderer(
         Writer writer,
+        JCCompilationUnit unit,
         [JCClassDecl+] classesToWrite,
-        String[] gwtSuperSourcePackages) extends Pretty(writer, true) {
-    shared void renderAsJavaSource(JCCompilationUnit unit) => printUnit(unit, null);
+        void reportError(String message, CompilationUnitTree? cu, Tree? node)) extends Pretty(writer, true) {
+    shared void renderAsJavaSource() => printUnit(unit, null);
     
     shared actual void printUnit(JCCompilationUnit tree, JCClassDecl? cdef) {
         super.printUnit(tree, cdef);
@@ -29,15 +35,24 @@ class GwtJavaRenderer(
         }
     }
     shared actual void visitAnnotation(JCAnnotation annot) {
-        if (exists sym = annot.annotationType?.type?.tsym,
-            exists qn = sym.qualifiedName.string) {
-            if (qn.startsWith("com.redhat.ceylon.") || qn.startsWith("ceylon.language.")) {
-                return;
-            }
+        if (exists name = annot.annotationType?.string,
+            name.startsWith(".ceylon.language.") ||
+            name.startsWith(".com.redhat.ceylon.")) {
+            return;
         }
         super.visitAnnotation(annot);
     }
     shared actual void visitMethodDef(JCMethodDecl meth) {
+        if (exists name = meth.name?.string,
+        	name == "$getType$") {
+            print(
+                "
+                 public com.redhat.ceylon.compiler.java.runtime.model.TypeDescriptor $getType$() {
+                     return null;
+                 }
+                 ");
+            return;
+        }
         super.visitMethodDef(meth);
     }
     
@@ -55,50 +70,99 @@ class GwtJavaRenderer(
         }
     }
 
-    shared actual void visitLetExpr(LetExpr letExpr) {
-        String | JCTree type ;
+    String | JCTree | Null getLetExprType(LetExpr letExpr) {
         switch(returnedExpr = letExpr.expr)
         case(is JCIdent) {
             value returnedVariableName = returnedExpr.name.string;
             for(s in letExpr.stats) {
                 if (is JCVariableDecl s,
-	                exists theName = s.name?.string,
-            		theName == returnedVariableName) {
-                    type = s.type;
-                    break;
+                    exists theName = s.name?.string,
+                    theName == returnedVariableName) {
+                    return s.type;
                 }
             } else {
-                type = "java.lang.Object";
+                reportError("Underlying `let` expression cannot be translated to valid Java source: returned variable (`` returnedVariableName ``) not found in the `let` statements", unit, returnedExpr);
+                return null;
+            }
+        }
+        case(is LetExpr) {
+            return getLetExprType(returnedExpr);
+        }
+        case(is JCNewClass) { 
+            if(is JCIdent clazz = returnedExpr.clazz,
+                exists returnedClassName = clazz.name?.string) {
+                for(s in letExpr.stats) {
+                    if (is JCClassDecl classDef = s,
+                        exists theName = classDef.name?.string,
+                        theName == returnedClassName) {
+                        if (exists extendsClause = classDef.extendsClause) {
+                            return extendsClause;
+                        } else {
+                            value implemented = CeylonIterable(classDef.implementsClause).filter((implementing) {
+                                value str = implementing.string;
+                                return str != ".java.io.Serializable" &&
+                                        str != ".com.redhat.ceylon.compiler.java.runtime.model.ReifiedType";
+                            }).sequence();
+                            if (nonempty implemented) {
+                                if (implemented.size != 1) {
+                                    reportError("Underlying `let` expression cannot be translated to valid Java source: returned class (`` returnedClassName ``) implements several interfaces", unit, returnedExpr);
+                                    return null;
+                                }
+                                return implemented.first;
+                            } else {
+                                reportError("Underlying `let` expression cannot be translated to valid Java source: returned class (`` returnedClassName ``) doesn't extend or implement anything", unit, returnedExpr);
+                                return null;
+                            }
+                        }
+                    }
+                } else {
+                    reportError("Underlying `let` expression cannot be translated to valid Java source: returned class (`` returnedClassName ``) not found in the `let` statements", unit, returnedExpr);
+                    return null;
+                }
+            } else {
+                reportError("Underlying `let` expression cannot be translated to valid Java source", unit, returnedExpr);
+                return null;
             }
         }
         case(is JCLiteral) {
             switch (kindLitteral = returnedExpr.typetag.kindLiteral)
             case(Tree.Kind.intLiteral) {
-                type="int";
+                return "int";
             }
             case(Tree.Kind.longLiteral) {
-                type="long";
+                return "long";
             }
             case(Tree.Kind.doubleLiteral) {
-                type="double";
+                return "double";
             }
             case(Tree.Kind.booleanLiteral) {
-                type="boolean";
+                return "boolean";
             }
             case(Tree.Kind.charLiteral) {
-                type="char";
+                return "char";
             }
             case(Tree.Kind.stringLiteral) {
-                type="java.lang.String";
+                return "java.lang.String";
             }
             case(Tree.Kind.nullLiteral) {
-                type="java.lang.Object";
+                return "java.lang.Object";
             }
             else {
-                type="java.lang.Object";
+                reportError("Underlying `let` expression cannot be translated to valid Java source", unit, returnedExpr);
+                return null;
             }
-        } else {
-            type = "java.lang.Object";
+        }
+        else {
+            reportError("Underlying `let` expression cannot be translated to valid Java source", unit, returnedExpr);
+            return null;
+        }
+    }
+
+    shared actual void visitLetExpr(LetExpr letExpr) {
+        value type = getLetExprType(letExpr);
+        if (! exists type) {
+            super.visitLetExpr(letExpr);
+            return;
         }
         
         print("
