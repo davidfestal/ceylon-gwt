@@ -13,7 +13,9 @@ import com.google.gwt.dom.client {
     Style
 }
 import com.google.gwt.event.dom.client {
-	KeyUpEvent
+	KeyUpEvent,
+	ChangeHandler,
+	ChangeEvent
 }
 
 /*
@@ -67,6 +69,7 @@ native("jvm") class MyEntryPoint() satisfies EntryPoint {
 
         value label = Label("Please enter your name : ");
 
+		// optional strings supported through the emulated `ceylon.language.String` class
         String? htmlContents = inJavascript(field.\ivalue);
 		
         value html = HTML(
@@ -92,14 +95,24 @@ native("jvm") class MyEntryPoint() satisfies EntryPoint {
         mainPanel.setWidgetTopHeight(html, (place += flowHeightEm), Style.Unit.em, 100.0, Style.Unit.pct);
 		root().add(mainPanel);
 
-		void setHtml() {
-			html.html = inJavascript(field.\ivalue);
+		// Functional values are supported
+		value newHtmlGetter = () => inJavascript(field.\ivalue);
+		
+
+		void updateHtml() {
+			html.html = newHtmlGetter();
 		}
 
-		void f(KeyUpEvent evt) => setHtml();
+		void keyUpHandler(KeyUpEvent evt) => updateHtml();
 		
-		field.addKeyUpHandler(f);
+		// Function references are supported
+		field.addKeyUpHandler(keyUpHandler);
 
-		field.addChangeHandler((evt) => setHtml());
+		// Object expressions, and let keyword are supported
+		field.addChangeHandler(
+			let (changeHandler = updateHtml)
+			object satisfies ChangeHandler {
+			onChange(ChangeEvent? event) => changeHandler();
+		});
 	}
 }
