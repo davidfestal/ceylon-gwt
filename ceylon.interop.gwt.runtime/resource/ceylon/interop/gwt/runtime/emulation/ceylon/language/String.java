@@ -7,8 +7,6 @@ public final class String
     implements ReifiedType, 
                java.lang.Comparable<String> {
     
-    private static final long serialVersionUID = 3920012367456670329L;
-
     public final static TypeDescriptor $TypeDescriptor$ = 
             TypeDescriptor.klass(String.class);
     
