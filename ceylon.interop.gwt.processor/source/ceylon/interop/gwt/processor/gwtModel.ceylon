@@ -7,6 +7,12 @@ import ceylon.collection {
     linked,
     HashMap
 }
+import ceylon.interop.java {
+	CeylonIterable
+}
+import com.redhat.ceylon.common {
+	Backend
+}
 
 abstract class GwtContainer {
 	shared String packageQualifiedName;
@@ -30,10 +36,12 @@ abstract class GwtContainer {
 class GwtModule
         extends GwtContainer {
 	shared String name;
+	shared String version;
 	shared String[] inherits;
 	shared String[] scripts;
 	shared String[] stylesheets;
 	shared String[] externalEntryPoints;
+	shared Boolean compileToJs;
 	
 	shared new fromModel(TypecheckerModule m, Annotation moduleAnnotation, void reportError(String msg) => print(msg))
 			extends GwtContainer.fromModel(m) {
@@ -47,15 +55,19 @@ class GwtModule
 		else if (exists lastPackagePart = [*m.name].last?.string)
 		then lastPackagePart.initial(1).uppercased + lastPackagePart.rest
 		else "";
+		compileToJs = Backend.javaScript in CeylonIterable(m.nativeBackends);
+		version = m.version;
 	}
 	
-	shared new(String packageQualifiedName, String name, String[] inherits, String[] scripts, String[] stylesheets, String[] externalEntryPoints)
-			extends GwtContainer(packageQualifiedName) {
+	shared new(TypecheckerModule m, String name, String[] inherits, String[] scripts, String[] stylesheets, String[] externalEntryPoints)
+			extends GwtContainer(m.nameAsString) {
 		this.name = name;
 		this.inherits = inherits;
-		this.scripts = scripts;
+		this.scripts = scripts.filter(not(GwtAnnotationProcessor.bootstrapCeylonJsScript.equals)).sequence();
 		this.stylesheets = stylesheets;
 		this.externalEntryPoints = externalEntryPoints;
+		compileToJs = Backend.javaScript in CeylonIterable(m.nativeBackends);
+		version = m.version;
 	}
 
     value sources_ = HashMap<String, GwtSource>(linked);

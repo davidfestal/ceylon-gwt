@@ -20,6 +20,9 @@ import org.xml.sax {
 import org.xml.sax.helpers {
     DefaultHandler
 }
+import com.redhat.ceylon.model.typechecker.model {
+    Module
+}
 
 /*
  <module>
@@ -33,7 +36,7 @@ import org.xml.sax.helpers {
 
  */
 
-GwtModule? parseGwtModule(String packageQualifiedName, File file) {
+GwtModule? parseGwtModule(Module m, File file) {
     value parser = SAXParserFactory.newInstance().newSAXParser();
     object state {
         shared variable Boolean hasFoundModule = false;
@@ -71,6 +74,7 @@ GwtModule? parseGwtModule(String packageQualifiedName, File file) {
         };
     }
 
+    value packageQualifiedName => m.nameAsString;
     
     try {
         parser.parse(file, object extends DefaultHandler() {
@@ -129,8 +133,7 @@ GwtModule? parseGwtModule(String packageQualifiedName, File file) {
         return GwtPublic(publicPackageQualifiedName);
     });
     
-
-    value gwtModule = GwtModule(packageQualifiedName, name, 
+    value gwtModule = GwtModule(m, name, 
         tags.values.inherits.sequence(), 
         tags.values.scripts.sequence(), 
         tags.values.stylesheet.sequence(), 
