@@ -125,7 +125,7 @@ in either the Ceylon compiler or the GWT compiler.
 
 Pull requests are welcome !
 
-By setting up the environment described in the [previous notice](important-notice), you
+By setting up the environment as described in the [previous notice](important-notice), you
 will be able to:
 - make changes to the source code of the annotation processor,
 in the `ceylon.interop.gwt.processor` module which is where most useful code changes
