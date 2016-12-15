@@ -52,7 +52,7 @@ In fact Ceylon code that only use basic types (String, Byte, Integer, Float, Boo
 Java JDK and GWT APIs should be supported.
 
 If something is not supported, this will either:
-- output an error during the Ceylon build, explaining that what is unsupported,
+- output an error during the Ceylon build, poiting to the unsupported element,
 - output an error when running the GWT compiler on the generated module CAR achive.
 
 However, keep in mind that all the Ceylon features are supported in a `native("js")`
