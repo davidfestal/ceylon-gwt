@@ -39,9 +39,24 @@ with the JSNI rules.
 
 All these features are demonstrated in the [sample project](#sample-project).
 
-For the moment, Ceylon iterables and collections are not supported in GWT code,
-but they can of course be used in a `native("js")` top-level function called from
-your GWT code by delegation.
+## Unsupported Ceylon features
+
+For the moment, the following features are not supported in GWT code:
+- Ceylon iterables and collections defined in the language module,
+- Tuples,
+- reified generics,
+- metamodel,
+- functions or classes that involves at least one unsupported element.
+
+In fact Ceylon code that only use basic types (String, Byte, Integer, Float, Boolean),
+Java JDK and GWT APIs should be supported.
+
+If something is not supported, this will either:
+- output an error during the Ceylon build, explaining that what is unsupported,
+- output an error when running the GWT compiler on the generated module CAR achive.
+
+However, keep in mind that all the Ceylon features are supported in a `native("js")`
+top-level function called from your GWT code by delegation.
 
 ## How to use the integration
 
@@ -98,9 +113,24 @@ So to test you should:
 ```
 - The GWT DevMode window should open with the URL to test the sample project compiled to JS.
 
-## Warning
+## Contribute
 
-There is currently a bug in the incremental build. To have it working without any error, you should always *clean build* the sample project.
+### Open issues !
 
+The first great way to contribute is to __*try it*__, and open an issue each time
+some code that [should be supported](#unsupported-ceylon-features) fails to compile
+in either the Ceylon compiler or the GWT compiler.
 
+### Contribute to code
+
+Pull requests are welcome !
+
+By setting up the environment described in the [previous notice](important-notice), you
+will be able to:
+- make changes to the source code of the annotation processor,
+in the `ceylon.interop.gwt.processor` module which is where most useful code changes
+will occur,
+- rebuild it,
+- rebuild the sample project: it will automatically use the modified annotation processor,
+and test your changes. 
 
