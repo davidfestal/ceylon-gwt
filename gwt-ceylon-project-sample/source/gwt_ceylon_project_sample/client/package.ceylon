@@ -2,5 +2,8 @@ import ceylon.interop.gwt.annotations {
 	gwtSource
 }
 
+"""
+   Main GWT `source` package, that contains the
+   GWT application [[entry point|MyEntryPoint]]"""
 gwtSource([`class MyEntryPoint`])
-package gwt_ceylon_project_sample.client;
+shared package gwt_ceylon_project_sample.client;

@@ -1,118 +1,210 @@
-import com.google.gwt.core.client {
-	EntryPoint
+import ceylon.html {
+    Div,
+    Br,
+    A,
+    Code,
+    I
 }
-import com.google.gwt.user.client.ui {
-    DockLayoutPanel { ... },
-    HasHorizontalAlignment {... },
-    RootLayoutPanel {
-        root = get
-    },
-	...
+import ceylon.interop.gwt.annotations {
+    gwtDelegate,
+    gwtJsCode,
+    gwtNative
+}
+
+import com.google.gwt.core.client {
+    EntryPoint,
+    GWT,
+    JavaScriptException
 }
 import com.google.gwt.dom.client {
     Style
 }
 import com.google.gwt.event.dom.client {
-	KeyUpEvent,
-	ChangeHandler,
-	ChangeEvent
+    KeyUpEvent,
+    ChangeHandler,
+    ChangeEvent
+}
+import com.google.gwt.user.client.ui {
+    DockLayoutPanel {
+        ...
+    },
+    HasHorizontalAlignment {
+        ...
+    },
+    RootLayoutPanel {
+        root=get
+    },
+    ...
+}
+import ceylon.interop.gwt.runtime.utilities {
+    injectRequireJsModules
 }
 
-/*
-
-import ceylon.html {
-    CeylonDiv=Div,
-    CeylonH1=H1
-}
-
-import ceylon.interop.gwt.annotations {
-    delegate
-}
- 
-shared native String inJavascript(String myString);
-
-shared native("jvm") String inJavascript(String myString) => delegate(`inJavascript`)(myString);
-
-shared native("js") String inJavascript(String myString) => CeylonDiv { 
-	CeylonH1 { "Hi, it's Ceylon printing '`` myString ``' inside GWT code" }
-}.string;
-
-
-shared native class JavascriptClass(String myString) {
-    shared native Integer method();
-}
-
-shared native("js") class JavascriptClass(String myString) {
-    shared native("js") Integer method() => 1;
-}
-
-shared native("jvm") class JavascriptClass(String myString) {
-    shared native("jvm") Integer method() => delegate(`method`)();
-}
-
-*/
- 
-native("jvm") String inJavascript(String myString) => 
-		"<div id='html'>
-		 	Hi `` myString `` !<br/><br/>Here is some Ceylon code running in GWT !
-		 </div>";
-
+"""
+   GWT entry point written in Ceylon.
+   
+   During the Ceylon build on the JVM backend, it is converted to Java source by a dedicated annotation
+   processor, and the Java source is added into the generated CAR archive, and made available for the
+   GWT compiler.
+   
+   The generated Java code can be found in the following file of the project:
+   
+       /classes/gwt-resources/gwt_ceylon_project_sample/client/sayHiInCeylon_.java
+   
+   since [[sayHiInCeylon]] is the only one public top-level element in this Ceylon file.
+   
+   If the module is also annotated with the `js` backend (which is the case
+   [[here|module gwt_ceylon_project_sample]]), and it was also compiled 
+   by the Javascript backend, then the generated RequireJS module, as well as its
+   transitive dependencies, are *automatically retrieved and added into the generated CAR archive*
+   as resources at the right place.
+   
+   This allows delegating very easily from GWT-generated Javascript
+   code to Ceylon-generated Javascript code, as it is demonstrated in [[sayHiInCeylon]].
+   
+   In this case, the RequireJS modules should be loaded when starting, which is done by the 
+   [[injectRequireJsModules]] provided by the 
+   [[ceylon.interop.gwt.runtime.utilities|package ceylon.interop.gwt.runtime.utilities]]
+   package.
+   
+   Another interesting feature is the ability to implement a method in Javascript directly
+   through JSNI, by using the [[gwtNative]] annotation. This is demonstrated by the
+   [[changeTitle()|doEntryPointActions.updateHtml.changeTitle]] local method.
+   
+   """
 native("jvm") class MyEntryPoint() satisfies EntryPoint {
-	shared actual void onModuleLoad() {
-        value title = Label("GWT client-side application written in Ceylon");
-        title.addStyleDependentName("title");
-        value titleHeightEm = 6.0;
-
-        value field = TextBox();
-        field.visibleLength=30;
-        field.maxLength=60;
-
-        value label = Label("Please enter your name : ");
-
-		// optional strings supported through the emulated `ceylon.language.String` class
-        String? htmlContents = inJavascript(field.\ivalue);
-		
-        value html = HTML(
-            if (exists htmlContents)
-            then htmlContents.string
-            else "unknown..."
-        );
-
-        value flow = FlowPanel();
-        flow.stylePrimaryName = "labelAndField";
-        flow.add(label);
-        flow.add(field);
-        value flowHeightEm = 4.0;
-
-        value mainPanel = LayoutPanel();
-        mainPanel.add(title);
-        mainPanel.add(flow);
-        mainPanel.add(html);
+    
+    shared actual void onModuleLoad() {
         
-        variable value place = 0.0;
-        mainPanel.setWidgetTopHeight(title, place, Style.Unit.px, titleHeightEm, Style.Unit.em);
-        mainPanel.setWidgetTopHeight(flow, (place += titleHeightEm), Style.Unit.em, flowHeightEm, Style.Unit.em);
-        mainPanel.setWidgetTopHeight(html, (place += flowHeightEm), Style.Unit.em, 100.0, Style.Unit.pct);
-		root().add(mainPanel);
-
-		// Functional values are supported
-		value newHtmlGetter = () => inJavascript(field.\ivalue);
-		
-
-		void updateHtml() {
-			html.html = newHtmlGetter();
-		}
-
-		void keyUpHandler(KeyUpEvent evt) => updateHtml();
-		
-		// Function references are supported
-		field.addKeyUpHandler(keyUpHandler);
-
-		// Object expressions, and let keyword are supported
-		field.addChangeHandler(
-			let (changeHandler = updateHtml)
-			object satisfies ChangeHandler {
-			onChange(ChangeEvent? event) => changeHandler();
-		});
-	}
+        // Delegation to Ceylon native javascript code requires loading a bootstrap script
+        // to load the corresponding RequireJs modules.
+        // Hopefully, this script is generated by the Ceylon-Gwt interop annotation processor
+        // and availableat the relative url given by the `bootstrapCeylonJsScript` value.
+        injectRequireJsModules(doEntryPointActions);
+    }
 }
+
+"""
+   Actions that will be started when the GWT module is loaded.
+   All this is translated into valid java source that is compiled
+   to Javascript by GWT.
+   """
+native("jvm") void doEntryPointActions() {
+
+    value title = Label("GWT client-side application written in Ceylon");
+    title.addStyleDependentName("title");
+    value titleHeightEm = 6.0;
+
+    value field = TextBox();
+    field.visibleLength=30;
+    field.maxLength=60;
+
+    value label = Label("Please enter your name : ");
+    
+    // Optional strings or basic types (Integer, Float, etc...) are supported through emulated classes
+    variable String? htmlContents = null;
+    try {
+        // Calling non-GWT Javascript compiled directly from Ceylon code
+        htmlContents = sayHiInCeylon(field.\ivalue);
+    } catch(JavaScriptException e) {
+        // The exceptions thrown in native Ceylon Javascript
+        // can be caught with `JavaScriptException`
+        // and the error message and exception detail will be
+        // shown in the Javascript console by calling `GWT.log`
+        GWT.log("Error when calling Ceylon native Javascript code:", e);
+    }
+    
+    value contents = htmlContents;
+    value html = HTML(
+        // If-Then-Else expressions are supported
+        if (exists contents)
+        then contents.string
+        else ""
+    );
+    
+    value flow = FlowPanel();
+    flow.stylePrimaryName = "labelAndField";
+    flow.add(label);
+    flow.add(field);
+    value flowHeightEm = 4.0;
+    
+    value mainPanel = LayoutPanel();
+    mainPanel.add(title);
+    mainPanel.add(flow);
+    mainPanel.add(html);
+    
+    variable value place = 0.0;
+    mainPanel.setWidgetTopHeight(title, place, Style.Unit.px, titleHeightEm, Style.Unit.em);
+    mainPanel.setWidgetTopHeight(flow, (place += titleHeightEm), Style.Unit.em, flowHeightEm, Style.Unit.em);
+    mainPanel.setWidgetTopHeight(html, (place += flowHeightEm), Style.Unit.em, 100.0, Style.Unit.pct);
+    
+    root().add(mainPanel);
+    
+    // Functional values are supported
+    value newHtmlGetter = () => sayHiInCeylon(field.\ivalue);
+
+    void updateHtml() {
+        html.html = newHtmlGetter();
+        
+        """locally-declared function with native JS content are supported
+           through the [[gwtNative]] annotation"""
+        gwtNative(
+            """
+               top.document.title = "Ceylon GWT application for " + name;
+               """)
+        void changeTitle(String name) => gwtJsCode<>();
+        
+        changeTitle(field.\ivalue);
+    }
+    
+    void keyUpHandler(KeyUpEvent evt) => updateHtml();
+    
+    // Function references are supported
+    field.addKeyUpHandler(keyUpHandler); 
+    
+    // Object expressions, and let keyword are supported
+    field.addChangeHandler(
+        let (changeHandler = updateHtml)
+        object satisfies ChangeHandler {
+            onChange(ChangeEvent? event) => changeHandler();
+        });
+    }
+
+
+"""
+   Method delegated to pure Ceylon
+   compiled for the Javascript Backend"""
+native
+shared String sayHiInCeylon(String name);
+
+"""
+   Ceylon code that uses the [[ceylon.html|module ceylon.html]]
+   module to fill a GWT [[HTML]] placeholder."""
+native("js") 
+shared String sayHiInCeylon(String name) => Div { id = "html";
+    "Hi `` name `` !",
+    Br(),
+    Br(),
+    "it's ",  I {"Javascript code compiled by Ceylon" }, " called ...",
+    Br(),
+    "... from ", I {"GWT code written in Ceylon..."},
+    Br(),
+    "... thanks to ", A { target="_blank"; href="https://github.com/davidfestal/ceylon-gwt";
+        "the ", Code { "ceylon.interop.gwt" } ," project."}
+    }.string;
+    
+"""
+   Delegation of a GWT top-level method to a method
+   written in pure Ceylon and compiled to native Javascript
+   is supported through the [[[gwtDelegate]]]] annotation
+   added on the `native(jvm)` declaration.
+   
+   The [[gwtJsCode]] method is used to provide a fake
+   `native("jvm") implementation that satisfies typechecking
+   rules."""
+gwtDelegate 
+native("jvm")
+shared String sayHiInCeylon(String name) => gwtJsCode<String>();
+    
+    
+
