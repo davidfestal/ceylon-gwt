@@ -4,7 +4,9 @@ import ceylon.interop.gwt.annotations {
 
 suppressWarnings("ceylonNamespace")
 gwtModule
+native("jvm")
 module ceylon.interop.gwt.runtime "1.0.0" {
-	native("jvm") import java.base "7";
+	import java.base "7";
 	shared import ceylon.interop.gwt.annotations "1.0.0";
+	import maven:"com.google.gwt:gwt-user" "2.8.0";
 }
