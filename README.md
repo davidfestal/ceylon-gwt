@@ -1,10 +1,5 @@
 # Ceylon GWT integration
 
-This integration is a proof of concept, that already works well with a
-(very) limited (non-defined) subset of Ceylon constructs.
-
-More supported Ceylon constructs / libraries will be added in the future.  
-    
 The integration is based on a *javac* annotation processor that is designed
 to be *called by the Ceylon compiler*, to produce `.car` module archives
 that can be *used by the GWT compiler*.
@@ -17,6 +12,36 @@ the binary module archive, the Java source code, XML descriptors,
 and Javascript native code required by the GWT compiler.
 
 This allows writing GWT projects *all in Ceylon*
+
+## Features
+
+This integration started as a proof of concept, but has already progressed to
+support most basic Ceylon language constructs, and provide a substantial
+set of features.
+
+However, more supported Ceylon constructs / libraries will be added in the future.
+    
+Current features are:
+- Automatic generation of the GWT module descriptor, with an automatically-included stylesheet.
+- Support of optional strings or basic types (Integer, Float, etc...) through emulated classes.
+- Support of a number of Ceylon-specific constructs such as:
+    - `if-then-else` expressions,
+    - `let` expressions,
+    - function references,
+    - functional values,
+    - inline object expressions,
+    - `else` keyword.
+- Support for delegating a top-level GWT function to a `native("js")` Ceylon method
+in which the full power of the Ceylon language can be leveraged on the Javascript
+platform.
+- Support for implementing the body of a GWT function directly in Javascript
+with the JSNI rules.
+
+All these features are demonstrated in the [sample project](#sample-project).
+
+For the moment, Ceylon iterables and collections are not supported in GWT code,
+but they can of course be used in a `native("js")` top-level function called from
+your GWT code by delegation.
 
 ## How to use the integration
 
@@ -51,7 +76,9 @@ in your config file.
 
 ## Sample project
 
-Besides the projects that are part of the Ceylon - GWT integration, this repository also provides a [sample project](./gwt-ceylon-project-sample).
+Besides the projects that are part of the Ceylon - GWT integration,
+this repository also provides a [sample project](./gwt-ceylon-project-sample) that
+demonstrates the currently supported features.
 
 ## Important notice
 
